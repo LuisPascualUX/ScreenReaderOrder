@@ -1,0 +1,16 @@
+{
+  "name": "Screen-Reader-Preview",
+  "version": "1.0.0",
+  "description": "Simula cómo un lector de pantalla lee tu diseño",
+  "main": "code.js",
+  "scripts": {
+    "lint": "eslint code.js",
+    "lint:fix": "eslint code.js --fix"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@figma/plugin-typings": "*",
+    "eslint": "^8.54.0"
+  }
+}

@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 12px;
+      padding: 16px;
+      color: #333;
+      background: #ffffff;
+    }
+
+    h2 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #000;
+    }
+
+    .header {
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e5e5e5;
+    }
+
+    .subtitle {
+      font-size: 11px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    button {
+      width: 100%;
+      padding: 8px 12px;
+      background: #18a0fb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #1690e8;
+    }
+
+    button:active {
+      background: #0d7dc9;
+    }
+
+    .secondary-button {
+      background: #f0f0f0;
+      color: #333;
+      margin-top: 8px;
+    }
+
+    .secondary-button:hover {
+      background: #e5e5e5;
+    }
+
+    .small-button {
+      width: auto;
+      padding: 4px 10px;
+      font-size: 11px;
+      margin-top: 6px;
+    }
+
+    #results {
+      margin-top: 16px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .stats {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: #f7f7f7;
+      border-radius: 6px;
+    }
+
+    .stat {
+      flex: 1;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 20px;
+      font-weight: 600;
+      color: #18a0fb;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .stat.issues .stat-number {
+      color: #f24822;
+    }
+
+    .element-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .element-item {
+      border-radius: 6px;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .element-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      background: #f9f9f9;
+      border-left: 3px solid #18a0fb;
+      border-radius: 6px;
+      cursor: move;
+    }
+
+    .element-item.has-issue .element-header {
+      border-left-color: #f24822;
+      background: #fff5f5;
+    }
+
+    .element-item.is-container .element-header {
+      background: #e8f4fd;
+      border-left-width: 4px;
+      cursor: pointer;
+    }
+
+    .element-header:hover {
+      background: #f0f0f0;
+    }
+
+    .element-item.is-container .element-header:hover {
+      background: #d4ebfa;
+    }
+
+    .element-item.dragging .element-header {
+      opacity: 0.5;
+    }
+
+    .element-item.drag-over .element-header {
+      border-top: 2px solid #18a0fb;
+      margin-top: 8px;
+    }
+
+    .expand-button {
+      cursor: pointer;
+      font-size: 12px;
+      color: #666;
+      padding: 2px;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+
+    .expand-button.expanded {
+      transform: rotate(90deg);
+    }
+
+    .drag-handle {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      cursor: grab;
+      padding: 2px;
+      flex-shrink: 0;
+    }
+
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+
+    .drag-dot {
+      width: 3px;
+      height: 3px;
+      background: #999;
+      border-radius: 50%;
+    }
+
+    .element-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      background: #18a0fb;
+      color: white;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .element-item.has-issue .element-number {
+      background: #f24822;
+    }
+
+    .container-icon {
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .element-type {
+      font-weight: 600;
+      color: #000;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    .element-item.is-container .element-type {
+      color: #0d7dc9;
+    }
+
+    .element-name {
+      font-size: 10px;
+      color: #999;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .select-icon {
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .element-header:hover .select-icon {
+      opacity: 0.5;
+    }
+
+    .select-icon:hover {
+      opacity: 1 !important;
+    }
+
+    .element-content {
+      padding-left: 12px;
+      margin-left: 20px;
+      border-left: 2px solid #e5e5e5;
+      margin-top: 4px;
+    }
+
+    .element-text {
+      font-size: 12px;
+      color: #333;
+      padding: 8px 12px;
+      line-height: 1.4;
+      background: #fafafa;
+      border-radius: 4px;
+      margin: 4px 0;
+    }
+
+    .element-issue {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 4px 0;
+      padding: 8px;
+      background: #fff;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #f24822;
+      border: 1px solid #ffe5e0;
+    }
+
+    .issue-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .issue-icon {
+      font-size: 14px;
+    }
+
+    .alt-text-input {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid #e5e5e5;
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: inherit;
+      color: #333;
+      margin-top: 6px;
+    }
+
+    .alt-text-input:focus {
+      outline: none;
+      border-color: #18a0fb;
+    }
+
+    .alt-text-input::placeholder {
+      color: #999;
+    }
+
+    .children-container {
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px 0 8px 24px;
+    }
+
+    .children-container.expanded {
+      display: flex;
+    }
+
+    .reading-order-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .info-box {
+      padding: 12px;
+      background: #e8f4fd;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #0d7dc9;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .success-message {
+      color: #0f9960;
+      font-size: 10px;
+      margin-top: 4px;
+      display: none;
+    }
+
+    .success-message.show {
+      display: block;
+    }
+
+    .child-count {
+      font-size: 10px;
+      color: #666;
+      background: #fff;
+      padding: 2px 6px;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>Screen Reader Preview</h2>
+    <div class="subtitle">Simula cómo un lector de pantalla lee tu diseño</div>
+  </div>
+
+  <button id="analyze">Analizar selección</button>
+  <button id="export" class="secondary-button" style="display: none;">📄 Exportar documentación</button>
+  <button id="close" class="secondary-button">Cerrar</button>
+
+  <div id="results"></div>
+
+  <script>
+    const resultsContainer = document.getElementById('results');
+    let currentElements = [];
+    let expandedContainers = new Set();
+    let draggedElement = null;
+
+    // Botón de analizar
+    document.getElementById('analyze').onclick = () => {
+      parent.postMessage({ pluginMessage: { type: 'analyze' } }, '*');
+    };
+
+    // Botón de cerrar
+    document.getElementById('close').onclick = () => {
+      parent.postMessage({ pluginMessage: { type: 'close' } }, '*');
+    };
+
+ // Botón de exportar
+document.getElementById('export').onclick = () => {
+  parent.postMessage({ 
+    pluginMessage: { 
+      type: 'export-documentation',
+      elements: getFlattenedElements()
+    } 
+  }, '*');
+};
+
+    // Recibimos mensajes desde code.js
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+
+      if (msg.type === 'no-selection') {
+        showEmptyState(msg.message);
+      }
+
+      if (msg.type === 'analysis-complete') {
+        currentElements = buildHierarchy(msg.elements);
+        showResults(currentElements);
+      }
+
+      if (msg.type === 'alt-text-saved') {
+        updateElementText(currentElements, msg.elementId, msg.altText);
+        showResults(currentElements);
+        
+        setTimeout(() => {
+          const item = document.querySelector(`[data-element-id="${msg.elementId}"]`);
+          if (item) {
+            const header = item.querySelector('.element-header');
+            if (header) {
+              header.style.transition = 'all 0.3s';
+              header.style.background = '#d4f4dd';
+              setTimeout(() => {
+                header.style.background = '';
+              }, 1000);
+            }
+          }
+        }, 100);
+      }
+    };
+
+    // Construye la jerarquía de elementos
+    function buildHierarchy(elements) {
+      const elementMap = new Map();
+      const roots = [];
+
+      // Crear un mapa de todos los elementos
+      elements.forEach(el => {
+        elementMap.set(el.id, { ...el, children: [] });
+      });
+
+      // Construir la jerarquía
+      elements.forEach(el => {
+        const element = elementMap.get(el.id);
+        if (el.parentId && elementMap.has(el.parentId)) {
+          elementMap.get(el.parentId).children.push(element);
+        } else {
+          roots.push(element);
+        }
+      });
+
+      return roots;
+    }
+
+    // Aplana la jerarquía para exportar
+    function getFlattenedElements() {
+      const flattened = [];
+      
+      function traverse(elements) {
+        elements.forEach(el => {
+          flattened.push(el);
+          if (el.children && el.children.length > 0) {
+            traverse(el.children);
+          }
+        });
+      }
+      
+      traverse(currentElements);
+      return flattened;
+    }
+
+    // Actualiza el texto de un elemento
+    function updateElementText(elements, elementId, altText) {
+      for (let el of elements) {
+        if (el.id === elementId) {
+          el.text = altText;
+          el.hasIssue = false;
+          el.issueMessage = '';
+          return true;
+        }
+        if (el.children && el.children.length > 0) {
+          if (updateElementText(el.children, elementId, altText)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    // Cuenta todos los elementos
+    function countAllElements(elements) {
+      let count = 0;
+      elements.forEach(el => {
+        count++;
+        if (el.children && el.children.length > 0) {
+          count += countAllElements(el.children);
+        }
+      });
+      return count;
+    }
+
+    // Cuenta elementos con problemas
+    function countIssues(elements) {
+      let count = 0;
+      elements.forEach(el => {
+        if (el.hasIssue) count++;
+        if (el.children && el.children.length > 0) {
+          count += countIssues(el.children);
+        }
+      });
+      return count;
+    }
+
+    // Muestra estado vacío
+    function showEmptyState(message) {
+      resultsContainer.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">👆</div>
+          <div>${message}</div>
+        </div>
+      `;
+    }
+
+    // Renderiza un elemento y sus hijos
+    function renderElement(element, index, parentPath = '') {
+      const path = parentPath ? `${parentPath}-${index}` : `${index}`;
+      const isContainer = element.children && element.children.length > 0;
+      const isExpanded = expandedContainers.has(element.id);
+      const issueClass = element.hasIssue ? 'has-issue' : '';
+      const containerClass = isContainer ? 'is-container' : '';
+
+      let html = `
+        <div class="element-item ${issueClass} ${containerClass}" 
+             data-element-id="${element.id}"
+             data-path="${path}">
+          <div class="element-header">
+      `;
+
+      // Botón de expandir/contraer para contenedores
+      if (isContainer) {
+        html += `
+          <span class="expand-button ${isExpanded ? 'expanded' : ''}" data-toggle="${element.id}">
+            ▶
+          </span>
+        `;
+      } else {
+        html += `<span style="width: 16px;"></span>`;
+      }
+
+      html += `
+            <div class="drag-handle">
+              <div class="drag-dot"></div>
+              <div class="drag-dot"></div>
+              <div class="drag-dot"></div>
+            </div>
+            <span class="element-number">${index + 1}</span>
+      `;
+
+      if (isContainer) {
+        html += `<span class="container-icon">📁</span>`;
+      }
+
+      html += `
+            <span class="element-type">[${element.type}]</span>
+            <span class="element-name">${element.name}</span>
+      `;
+
+      if (isContainer) {
+        html += `<span class="child-count">${element.children.length}</span>`;
+      }
+
+      html += `
+            <span class="select-icon" title="Seleccionar en Figma">👁️</span>
+          </div>
+      `;
+
+      // Contenido del elemento (texto, problemas)
+      if (element.text || element.hasIssue) {
+        html += `<div class="element-content">`;
+        
+        if (element.text) {
+          html += `<div class="element-text">"${element.text}"</div>`;
+        }
+
+        if (element.hasIssue) {
+          const needsAltText = element.issueMessage.includes('sin texto alternativo') || 
+                               element.issueMessage.includes('sin descripción') ||
+                               element.issueMessage.includes('sin etiqueta');
+          
+          html += `
+            <div class="element-issue">
+              <div class="issue-header">
+                <span class="issue-icon">⚠️</span>
+                <span>${element.issueMessage}</span>
+              </div>
+          `;
+
+          if (needsAltText) {
+            html += `
+              <input 
+                type="text" 
+                class="alt-text-input" 
+                placeholder="Añadir texto alternativo..."
+                data-element-id="${element.id}"
+              />
+              <button class="small-button" data-save-alt="${element.id}">Guardar</button>
+              <div class="success-message" data-success-msg="${element.id}">✓ Guardado correctamente</div>
+            `;
+          }
+
+          html += `</div>`;
+        }
+
+        html += `</div>`;
+      }
+
+      // Hijos (si es un contenedor)
+      if (isContainer) {
+        html += `
+          <div class="children-container ${isExpanded ? 'expanded' : ''}" data-container="${element.id}">
+        `;
+
+        element.children.forEach((child, childIndex) => {
+          html += renderElement(child, childIndex, path);
+        });
+
+        html += `</div>`;
+      }
+
+      html += `</div>`;
+
+      return html;
+    }
+
+    // Muestra los resultados del análisis
+    function showResults(elements) {
+      document.getElementById('export').style.display = 'block';
+      
+      if (elements.length === 0) {
+        showEmptyState('No se encontraron elementos legibles en la selección');
+        return;
+      }
+
+      const totalElements = countAllElements(elements);
+      const issuesCount = countIssues(elements);
+
+      let html = `
+        <div class="info-box">
+          📖 Haz clic en 📁 para expandir/contraer frames. Arrastra elementos para reordenar. Haz clic en 👁️ para seleccionar en Figma.
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-number">${totalElements}</div>
+            <div class="stat-label">Elementos</div>
+          </div>
+          <div class="stat issues">
+            <div class="stat-number">${issuesCount}</div>
+            <div class="stat-label">Problemas</div>
+          </div>
+        </div>
+
+        <div class="reading-order-label">
+          🔊 Orden de lectura
+        </div>
+
+        <div class="element-list">
+      `;
+
+      elements.forEach((element, index) => {
+        html += renderElement(element, index);
+      });
+
+      html += '</div>';
+
+      resultsContainer.innerHTML = html;
+
+      setupEventListeners();
+    }
+
+    // Configura todos los event listeners
+    function setupEventListeners() {
+      // Botones de expandir/contraer
+      document.querySelectorAll('.expand-button').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const containerId = btn.getAttribute('data-toggle');
+          
+          if (expandedContainers.has(containerId)) {
+            expandedContainers.delete(containerId);
+          } else {
+            expandedContainers.add(containerId);
+          }
+          
+          showResults(currentElements);
+        });
+      });
+
+      // Iconos de seleccionar
+      document.querySelectorAll('.select-icon').forEach(icon => {
+        icon.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const item = icon.closest('.element-item');
+          const elementId = item.getAttribute('data-element-id');
+          parent.postMessage({ 
+            pluginMessage: { 
+              type: 'select-element',
+              elementId: elementId
+            } 
+          }, '*');
+        });
+      });
+
+      // Botones de guardar texto alternativo
+      setupAltTextSave();
+
+      // Drag & drop
+      setupDragAndDrop();
+    }
+
+    // Configura los botones de guardar texto alternativo
+    function setupAltTextSave() {
+      const saveButtons = document.querySelectorAll('[data-save-alt]');
+      
+      saveButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const elementId = button.getAttribute('data-save-alt');
+          const input = document.querySelector(`[data-element-id="${elementId}"].alt-text-input`);
+          
+          if (input && input.value.trim()) {
+            parent.postMessage({ 
+              pluginMessage: { 
+                type: 'save-alt-text',
+                elementId: elementId,
+                altText: input.value.trim()
+              } 
+            }, '*');
+          }
+        });
+      });
+
+      const inputs = document.querySelectorAll('.alt-text-input');
+      inputs.forEach(input => {
+        input.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const elementId = input.getAttribute('data-element-id');
+            const button = document.querySelector(`[data-save-alt="${elementId}"]`);
+            if (button) button.click();
+          }
+        });
+
+        input.addEventListener('mousedown', (e) => {
+          e.stopPropagation();
+        });
+      });
+    }
+
+    // Configura drag & drop
+    function setupDragAndDrop() {
+      const headers = document.querySelectorAll('.element-header');
+
+      headers.forEach(header => {
+        header.setAttribute('draggable', 'true');
+
+        header.addEventListener('dragstart', (e) => {
+          const item = header.closest('.element-item');
+          draggedElement = item;
+          item.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        header.addEventListener('dragend', (e) => {
+          const item = header.closest('.element-item');
+          item.classList.remove('dragging');
+          
+          headers.forEach(h => h.closest('.element-item').classList.remove('drag-over'));
+          
+          draggedElement = null;
+        });
+
+        header.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          const item = header.closest('.element-item');
+          
+          if (draggedElement === item) return;
+          
+          headers.forEach(h => h.closest('.element-item').classList.remove('drag-over'));
+          item.classList.add('drag-over');
+          
+          e.dataTransfer.dropEffect = 'move';
+        });
+
+        header.addEventListener('dragleave', (e) => {
+          const item = header.closest('.element-item');
+          item.classList.remove('drag-over');
+        });
+
+        header.addEventListener('drop', (e) => {
+          e.preventDefault();
+          const item = header.closest('.element-item');
+          
+          if (draggedElement === item) return;
+          
+          const fromPath = draggedElement.getAttribute('data-path');
+          const toPath = item.getAttribute('data-path');
+          
+          reorderElements(currentElements, fromPath, toPath);
+          showResults(currentElements);
+        });
+      });
+    }
+
+    // Reordena elementos en la jerarquía
+    function reorderElements(elements, fromPath, toPath) {
+      const fromParts = fromPath.split('-').map(Number);
+      const toParts = toPath.split('-').map(Number);
+      
+      // Encuentra el elemento arrastrado
+      let fromParent = elements;
+      let fromElement = null;
+      let fromIndex = null;
+      
+      for (let i = 0; i < fromParts.length; i++) {
+        if (i === fromParts.length - 1) {
+          fromIndex = fromParts[i];
+          fromElement = fromParent[fromIndex];
+        } else {
+          fromParent = fromParent[fromParts[i]].children;
+        }
+      }
+      
+      // Encuentra la posición de destino
+      let toParent = elements;
+      let toIndex = null;
+      
+      for (let i = 0; i < toParts.length; i++) {
+        if (i === toParts.length - 1) {
+          toIndex = toParts[i];
+        } else {
+          toParent = toParent[toParts[i]].children;
+        }
+      }
+      
+      // Reordena
+      fromParent.splice(fromIndex, 1);
+      
+      // Ajusta el índice si están en el mismo nivel
+      if (fromParent === toParent && fromIndex < toIndex) {
+        toIndex--;
+      }
+      
+      toParent.splice(toIndex, 0, fromElement);
+    }
+
+    // Mostramos estado inicial
+    showEmptyState('Selecciona un frame o componente y haz clic en "Analizar selección"');
+  </script>
+</body>
+</html>
